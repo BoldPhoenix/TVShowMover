@@ -1,0 +1,3 @@
+*.psbuild
+*.TempPoint.ps1
+bin/*
