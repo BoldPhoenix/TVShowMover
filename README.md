@@ -14,6 +14,10 @@
 ---------------------------------------
 <dl>
 
+Version 2.0.0.6 - 10/14/2020 
+- Updated Season and Episode detection to reach to "999" instead of "30".
+- Added "clean up" function to delete folder and other files after moving tv show to new location.
+
 Version 2.0.0.5 - 06/10/2020 
 - Further updated and cleaned up logic for tv shows based on ini file paths.
 
