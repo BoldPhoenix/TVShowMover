@@ -9,7 +9,6 @@
 # Version 0.0.0.1 - 03/26/2019 - Initial Creation.
 # Version 2.0.0.5 - 06/10/2020 - See Readme file for update details.
 # Version 2.0.0.6 - 10/14/2020 - See Readme file for update details.
-# Version 2.0.0.7 - 10/22/2020 - See Readme file for update details.
 ###########################################################################################################################################
 
 $filepath = "$PSScriptRoot\TVShowMover.ini"
@@ -55,7 +54,7 @@ foreach ($Folder in $folderlist)
     rename-Item -literalpath $oldname $NewName -force
 }
 
-$filelist = Get-ChildItem -Path $DownloadDirectory -recurse | where {(($_.name -like "*.mp4") -or ($_.name -like "*.mkv") -or ($_.name -like "*.avi") -or ($_.name -like "*.mpg") -or ($_.name -like "*.mov") -or ($_.name -like "*.wmv"))}
+$filelist = Get-ChildItem -Path $DownloadDirectory -recurse | Where-Object -FilterScript { $_.Name -match $RegEx }
 foreach ($File in $filelist)
 {
     $ConvertedName = ($File.Name -replace '[\[+*?()\]]', '')
@@ -110,17 +109,11 @@ foreach ($file in $listfilepaths)
     if (($ShowObjSummary.name -contains $filename) -and ((Get-ChildItem $TVShowPath\*.mkv) -eq $null) -and ((Get-ChildItem $TVShowPath\*.mp4) -eq $null))
     {
         move-item -literalpath $file -Destination $TVShowPath -force
-        if (!($TorrentFolder -eq $PSScriptRoot))
-        {
-            Remove-Item -Path $TorrentFolder -recurse -Force
-        }
+        Remove-Item -Path $TorrentFolder -recurse -Force
     }
     elseif (($ShowObjSummary.name -contains $filename) -and ((Get-ChildItem $TVShowPath | where { $_.name -like "*$showname*$episode*" }) -eq $null))
     {
         move-item -literalpath $file -Destination $TVShowPath -force
-        if (!($TorrentFolder -eq $PSScriptRoot))
-        {
-            Remove-Item -Path $TorrentFolder -recurse -Force
-        }
+        Remove-Item -Path $TorrentFolder -recurse -Force
     }
 }

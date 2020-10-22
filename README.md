@@ -14,6 +14,9 @@
 ---------------------------------------
 <dl>
 
+Version 2.0.0.7 - 10/22/2020 
+- Fixed issue with deleting and/or moving ini files with tv shows.
+
 Version 2.0.0.6 - 10/14/2020 
 - Updated Season and Episode detection to reach to "999" instead of "30".
 - Added "clean up" function to delete folder and other files after moving tv show to new location.
