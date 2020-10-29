@@ -14,6 +14,9 @@
 ---------------------------------------
 <dl>
 
+Version 2.0.0.8 - 10/28/2020 
+- Fixed issue with processing tv shows with "S" in the name.
+
 Version 2.0.0.7 - 10/22/2020 
 - Fixed issue with deleting and/or moving ini files with tv shows.
 
