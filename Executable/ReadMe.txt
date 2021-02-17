@@ -10,6 +10,9 @@ Step 3. Configure your downloading tool to run tvshowmover.exe after download.
 
 UPDATES:
 ---------------------------------------
+Version 2.0.0.9 - 02/17/2021 
+- Added conversion to replace spaces with periods to simplify auto filing
+
 Version 2.0.0.8 - 10/28/2020 
 - Fixed issue with processing tv shows with "S" in the name.
 
