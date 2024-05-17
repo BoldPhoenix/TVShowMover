@@ -14,6 +14,9 @@
 ---------------------------------------
 <dl>
 
+  Version 2.0.1.0 - 05/17/2024 
+- Added ability to create destination folders on the fly based on path in ini file
+
 Version 2.0.0.9 - 02/17/2021 
 - Added conversion to replace spaces with periods to simplify auto filing
 
