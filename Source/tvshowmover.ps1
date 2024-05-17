@@ -13,6 +13,7 @@
 # Version 2.0.0.8 - 10/28/2020 - See Readme file for update details.
 # Version 2.0.0.9 - 02/17/2021 - See Readme file for update details.
 # Version 2.0.1.0 - 05/17/2024 - See Readme file for update details.
+# Version 2.0.1.1 - 05/17/2024 - See Readme file for update details.
 ###########################################################################################################################################
 
 $filepath = "$PSScriptRoot\TVShowMover.ini"
@@ -209,17 +210,13 @@ foreach ($file in $listfilepaths)
 	if (($ShowObjSummary.name -contains $filename) -and ((Get-ChildItem $TVShowPath\*.mkv) -eq $null) -and ((Get-ChildItem $TVShowPath\*.mp4) -eq $null))
 	{
 		move-item -literalpath $file -Destination $TVShowPath -force
-		if (!($TorrentFolder -eq $PSScriptRoot))
-		{
-			Remove-Item -Path $TorrentFolder -recurse -Force
-		}
 	}
 	elseif (($ShowObjSummary.name -contains $filename) -and ((Get-ChildItem $TVShowPath | where { $_.name -like "*$showname*$episode*" }) -eq $null))
 	{
 		move-item -literalpath $file -Destination $TVShowPath -force
-		if (!($TorrentFolder -eq $PSScriptRoot))
-		{
-			Remove-Item -Path $TorrentFolder -recurse -Force
-		}
 	}
+}
+if (!($TorrentFolder -eq $PSScriptRoot))
+{
+	Remove-Item -Path $TorrentFolder -recurse -Force
 }
