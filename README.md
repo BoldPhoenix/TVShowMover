@@ -14,7 +14,14 @@
 ---------------------------------------
 <dl>
 
-  Version 2.0.1.0 - 05/17/2024 
+Version 3.0.0.1 - 09/24/2024
+- Fixed bug with processing folders with illegal characters in the name.
+
+Version 3.0.0.0 - 09/22/2024 
+- Reworked code for speed and efficiency.
+- Changed Show Format listing in ini file.
+
+Version 2.0.1.0 - 05/17/2024 
 - Added ability to create destination folders on the fly based on path in ini file
 
 Version 2.0.0.9 - 02/17/2021 
