@@ -19,11 +19,24 @@
 ###########################################################################################################################################
 
 # Define the path of the folder to scan
-$sourceFolder = "$PSScriptRoot"
+$sourceFolder = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath('.\')
 
 # Define the path to the provided INI file
-$iniFile = "$PSScriptRoot\TVShowMover.ini"
+$iniFile = "$sourcefolder\TVShowMover.ini"
 
+# Define characters that are illegal in Windows file names
+$arrInvalidChars = '[]/|\+={}$%^&*()'.ToCharArray()
+
+# Get all video files in the source folder
+$fixfiles = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.avi, *.srt, *.jpg
+
+foreach ($fixfile in $fixfiles)
+{
+	# Remove illegal characters from the file name
+	$cleanedfilename = $fixfile.name
+	$arrInvalidChars | % { $cleanedfilename = $cleanedfilename.replace($_, '.') }
+	cmd.exe /c ren $fixfile $cleanedFileName
+}
 
 # Function to parse INI file and return a dictionary of show names to paths
 function Get-IniContent
@@ -96,7 +109,6 @@ function Parse-TVShowFileName
 	return $null
 }
 
-# Function to match show name from INI and sort the files
 function Sort-TVShows
 {
 	param (
@@ -105,7 +117,7 @@ function Sort-TVShows
 	)
 	
 	# Get all video files in the source folder
-	$files = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.avi, *.mov, *.mpg, *.wmv, *.srt
+	$files = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.srt, *.jpg
 	
 	foreach ($file in $files)
 	{
@@ -149,7 +161,7 @@ function Sort-TVShows
 		if (!(Get-ChildItem -Path $parentFolder) -and ($parentfolder -ne $sourceFolder))
 		{
 			# Delete the parent folder if it's empty
-			Remove-Item -Path $parentFolder -Force
+			Remove-Item -Path $parentFolder -Force -Confirm:$false
 		}
 	}
 }
