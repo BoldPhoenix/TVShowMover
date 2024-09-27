@@ -6,16 +6,8 @@
 # TVShowMover is designed to scan a directory for tv shows in any movie format, then move them
 # to their appropriate folder based on show name and season indicated in the ini file.
 # 
-# Version 0.0.0.1 - 03/26/2019 - Initial Creation.
-# Version 2.0.0.5 - 06/10/2020 - See Readme file for update details.
-# Version 2.0.0.6 - 10/14/2020 - See Readme file for update details.
-# Version 2.0.0.7 - 10/22/2020 - See Readme file for update details.
-# Version 2.0.0.8 - 10/28/2020 - See Readme file for update details.
-# Version 2.0.0.9 - 02/17/2021 - See Readme file for update details.
-# Version 2.0.1.0 - 05/17/2024 - See Readme file for update details.
-# Version 2.0.1.1 - 05/17/2024 - See Readme file for update details.
-# Version 3.0.0.0 - 09/22/2024 - See Readme file for update details.
-# Version 3.0.0.1 - 09/24/2024 - See Readme file for update details.
+# Version 0.0.0.1 - 03/26/2019 - Initial Creation
+# Version 3.0.0.2 - 09/27/2024 - See Readme file for update details.
 ###########################################################################################################################################
 
 # Define the path of the folder to scan
@@ -25,10 +17,10 @@ $sourceFolder = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFro
 $iniFile = "$sourcefolder\TVShowMover.ini"
 
 # Define characters that are illegal in Windows file names
-$arrInvalidChars = '[]/|\+={}$%^&*()'.ToCharArray()
+$arrInvalidChars = '[]/|\+-={}$%^&*()'.ToCharArray()
 
 # Get all video files in the source folder
-$fixfiles = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.avi, *.srt, *.jpg
+$fixfiles = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.avi, *.mov, *.mpg, *.srt
 
 foreach ($fixfile in $fixfiles)
 {
@@ -36,6 +28,17 @@ foreach ($fixfile in $fixfiles)
 	$cleanedfilename = $fixfile.name
 	$arrInvalidChars | % { $cleanedfilename = $cleanedfilename.replace($_, '.') }
 	cmd.exe /c ren $fixfile $cleanedFileName
+}
+
+# Get all video files in the source folder
+$fixfolders = Get-ChildItem -Path $sourceFolder -Directory -Recurse
+
+foreach ($fixfolder in $fixfolders)
+{
+	# Remove illegal characters from the file name
+	$cleanedfoldername = $fixfolder.name
+	$arrInvalidChars | % { $cleanedfoldername = $cleanedfoldername.replace($_, '.') }
+	cmd.exe /c ren $fixfolder $cleanedFolderName
 }
 
 # Function to parse INI file and return a dictionary of show names to paths
@@ -117,7 +120,7 @@ function Sort-TVShows
 	)
 	
 	# Get all video files in the source folder
-	$files = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.srt, *.jpg
+	$files = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.srt
 	
 	foreach ($file in $files)
 	{
