@@ -16,6 +16,9 @@
 
 Version 3.0.0.2 - 09/27/2024
 - Fixed bug with processing folders with illegal characters in the name.
+- 
+Version 3.0.0.1 - 09/24/2024
+- Fixed bug with processing files with illegal characters in the name.
 
 Version 3.0.0.1 - 09/24/2024
 - Fixed bug with processing files with illegal characters in the name.
