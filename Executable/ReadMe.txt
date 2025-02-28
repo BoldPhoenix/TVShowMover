@@ -10,6 +10,23 @@ Step 3. Configure your downloading tool to run tvshowmover.exe after download.
 
 UPDATES:
 ---------------------------------------
+Version 3.0.0.4 - 02/28/2025
+- Fixed bug with removing leftover folders after file moves.
+- Added logging.
+
+Version 3.0.0.2 - 09/27/2024
+- Fixed bug with processing folders with illegal characters in the name.
+
+Version 3.0.0.1 - 09/24/2024
+- Fixed bug with processing files with illegal characters in the name.
+
+Version 3.0.0.0 - 09/22/2024 
+- Reworked code for speed and efficiency.
+- Changed Show Format listing in ini file.
+
+Version 2.0.1.0 - 05/17/2024 
+- Added ability to create destination folders on the fly based on path in ini file
+
 Version 2.0.0.9 - 02/17/2021 
 - Added conversion to replace spaces with periods to simplify auto filing
 

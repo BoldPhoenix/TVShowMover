@@ -14,6 +14,10 @@
 ---------------------------------------
 <dl>
 
+Version 3.0.0.4 - 02/28/2025
+- Fixed bug with removing leftover folders after file moves.
+- Added logging.
+
 Version 3.0.0.2 - 09/27/2024
 - Fixed bug with processing folders with illegal characters in the name.
 
