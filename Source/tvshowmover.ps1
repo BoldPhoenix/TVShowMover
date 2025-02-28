@@ -7,38 +7,42 @@
 # to their appropriate folder based on show name and season indicated in the ini file.
 # 
 # Version 0.0.0.1 - 03/26/2019 - Initial Creation
-# Version 3.0.0.2 - 09/27/2024 - See Readme file for update details.
+# Version 3.0.0.4 - 02/28/2025 - See Readme file for update details.
 ###########################################################################################################################################
 
-# Define the path of the folder to scan
-$sourceFolder = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath('.\')
+#$DownloadDirectory = $PSScriptRoot
+$DownloadDirectory = "d:\downloads"
+$filepath = "$DownloadDirectory\TVShowMover.ini"
 
-# Define the path to the provided INI file
-$iniFile = "$sourcefolder\TVShowMover.ini"
+#Create Logs folder if doesn't exist
+[CmdletBinding()]
+[OutputType([string[]])]
 
-# Define characters that are illegal in Windows file names
-$arrInvalidChars = '[]/|\+-={}$%^&*()'.ToCharArray()
+$DownloadDirectory = "d:\downloads"
 
-# Get all video files in the source folder
-$fixfiles = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.avi, *.mov, *.mpg, *.srt
+# Get curent date and time
+$TimeStamp = (get-date -format u).Substring(0, 10)
 
-foreach ($fixfile in $fixfiles)
+# Construct transcript file full path
+$TranscriptFile = "TVShowMover" + "-" + $TimeStamp + ".log"
+$script:Transcript = Join-Path -Path $DownloadDirectory -ChildPath $TranscriptFile
+
+# Create log and transcript files
+if (!($transcript))
 {
-	# Remove illegal characters from the file name
-	$cleanedfilename = $fixfile.name
-	$arrInvalidChars | % { $cleanedfilename = $cleanedfilename.replace($_, '.') }
-	cmd.exe /c ren $fixfile $cleanedFileName
+	New-Item -Path $Transcript -ItemType File -ErrorAction SilentlyContinue
+	WriteLog "***********************"
 }
-
-# Get all video files in the source folder
-$fixfolders = Get-ChildItem -Path $sourceFolder -Directory -Recurse
-
-foreach ($fixfolder in $fixfolders)
+else
 {
-	# Remove illegal characters from the file name
-	$cleanedfoldername = $fixfolder.name
-	$arrInvalidChars | % { $cleanedfoldername = $cleanedfoldername.replace($_, '.') }
-	cmd.exe /c ren $fixfolder $cleanedFolderName
+	Function WriteLog
+	{
+		Param ([string]$LogString)
+		$Stamp = (Get-Date).toString("yyyy-MM-dd HH:mm:ss")
+		$LogMessage = "$Stamp $LogString"
+		Add-content $Transcript -value $LogMessage
+	}
+	WriteLog "***********************"
 }
 
 # Function to parse INI file and return a dictionary of show names to paths
@@ -112,65 +116,83 @@ function Parse-TVShowFileName
 	return $null
 }
 
-function Sort-TVShows
+$separator = "S[0-9]*E[0-9]*"
+$RegEx = '[^-\w\.]'
+$folderlist = Get-ChildItem -Path $DownloadDirectory | Where-Object -FilterScript { $_.Name -match $RegEx }
+foreach ($Folder in $folderlist)
 {
-	param (
-		[string]$sourceFolder,
-		[hashtable]$showPaths
-	)
-	
-	# Get all video files in the source folder
-	$files = Get-ChildItem -Path $sourceFolder -File -Recurse -Include *.mp4, *.mkv, *.srt
-	
-	foreach ($file in $files)
+	$ConvertedName = ($Folder.Name -replace '[\[+*?()\]]', '')
+	$ConvertedName = ($ConvertedName -replace '\s', '.')
+	$NewName = ((Split-Path -Path $Folder.FullName -Parent) + "\" + $ConvertedName)
+	$Oldname = $folder.FullName
+	rename-Item -literalpath $oldname $NewName -force
+}
+
+$filelist = Get-ChildItem -Path $DownloadDirectory -recurse | where { (($_.name -like "*.mp4") -or ($_.name -like "*.mkv") -or ($_.name -like "*.avi") -or ($_.name -like "*.mpg") -or ($_.name -like "*.mov") -or ($_.name -like "*.wmv")) }
+foreach ($File in $filelist)
+{
+	$ConvertedName = ($File.Name -replace '[\[+*?()\]]', '')
+	$ConvertedName = ($ConvertedName -replace '\s', '.')
+	$NewName = ((Split-Path -Path $File.FullName -Parent) + "\" + $ConvertedName)
+	$Oldname = $file.FullName
+	rename-Item -literalpath $oldname $NewName -force
+}
+
+$showPaths = Get-IniContent $filepath
+
+foreach ($file in $filelist)
+{
+	$parsed = Parse-TVShowFileName -fileName $file.Name
+	$season = $parsed.season
+    if($season.length -eq 1){$originalseason = "0"+$season}
+	$showname = $parsed.showname
+	$episode = $parsed.episode
+	$TorrentFolder = split-path -path $file.FullName -parent
+	if ($parsed -ne $null)
 	{
-		# Parse the file name
-		$parsed = Parse-TVShowFileName -fileName $file.Name
-		
-		if ($parsed -ne $null)
+		$showName = $parsed.ShowName
+		$showPath = $showPaths[$showName]
+        $fullseasonname = "Season "+$season
+		if ($showPath -ne $null)
 		{
-			$showName = $parsed.ShowName
+			# Create the destination folder structure
+			$seasonFolder = join-path $showpath $fullseasonname
 			
-			# Find the show path from the INI file
-			$showPath = $showPaths[$showName]
+			# Create directories if they don't exist
+			if (-not (Test-Path $seasonFolder))
+			{
+				WriteLog "Creating New Season Folder: $seasonFolder"
+				New-Item -Path $seasonFolder -ItemType Directory | Out-Null
+			}
 			
-			if ($showPath -ne $null)
-			{
-				# Create the destination folder structure
-				$seasonFolder = Join-Path $showPath ("Season " + $parsed.Season)
-				
-				# Create directories if they don't exist
-				if (-not (Test-Path $seasonFolder))
-				{
-					New-Item -Path $seasonFolder -ItemType Directory | Out-Null
-				}
-				
-				# Move the file to the new destination
-				$destinationPath = Join-Path $seasonFolder $file.Name
-				Move-Item -Path $file.FullName -Destination $destinationPath -Force
-				
-				Write-Host "Moved: $($file.Name) -> $destinationPath"
-			}
-			else
-			{
-				Write-Warning "Show not found in INI file: $showName"
-			}
+			# Set Destination Path
+			$destinationPath = join-path $seasonFolder $file.Name
+		}
+		
+		if ((get-childitem $seasonfolder | where { $_.name -like "*$showname*E$episode*"}) -eq $null)
+		{	
+			WriteLog "Moving $file.name in to folder: $destinationPath"
+			Move-Item -Path $file.FullName -Destination $destinationPath -Force
+			if (!($TorrentFolder -eq $DownloadDirectory))
+			    {
+				    WriteLog "Removing download folder: $TorrentFolder"
+				    Remove-Item -Path $TorrentFolder -recurse -Force
+			    }
 		}
 		else
 		{
-			Write-Warning "Could not parse file name: $($file.Name)"
-		}
-		$parentfolder = split-path $file -parent
-		if (!(Get-ChildItem -Path $parentFolder) -and ($parentfolder -ne $sourceFolder))
-		{
-			# Delete the parent folder if it's empty
-			Remove-Item -Path $parentFolder -Force -Confirm:$false
+			WriteLog "$file.name already exists in $destinationPath no action necessary."
+			if (!($TorrentFolder -eq $DownloadDirectory))
+			    {
+				    WriteLog "Removing download folder: $TorrentFolder"
+				    Remove-Item -Path $TorrentFolder -recurse -Force
+			    }
+            else
+                {
+                    WriteLog "Removing downloaded file: $file"
+                    Remove-Item -Path $file.FullName -Force
+                }
 		}
 	}
 }
-
-# Load INI file content
-$showPaths = Get-IniContent -iniFile $iniFile
-
-# Call the sorting function
-Sort-TVShows -sourceFolder $sourceFolder -showPaths $showPaths
+WriteLog "***********************"
