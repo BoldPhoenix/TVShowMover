@@ -10,6 +10,10 @@ Step 3. Configure your downloading tool to run tvshowmover.exe after download.
 
 UPDATES:
 ---------------------------------------
+Version 3.0.0.5 - 02/28/2025
+- Fixed bug with moving show packs with multiple seasons.
+- Added srt files to move function.
+
 Version 3.0.0.4 - 02/28/2025
 - Fixed bug with removing leftover folders after file moves.
 - Added logging.
