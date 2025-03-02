@@ -14,6 +14,9 @@
 ---------------------------------------
 <dl>
 
+Version 3.0.0.6 - 03/02/2025
+- Added scan for files with underscores in the name.
+
 Version 3.0.0.5 - 02/28/2025
 - Fixed bug with moving show packs with multiple seasons.
 - Added srt files to move function.

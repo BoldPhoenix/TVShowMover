@@ -7,7 +7,7 @@
 # to their appropriate folder based on show name and season indicated in the ini file.
 # 
 # Version 0.0.0.1 - 03/26/2019 - Initial Creation
-# Version 3.0.0.6 - 03/02/2025 - See Readme file for update details.
+# Version 3.0.0.5 - 02/28/2025 - See Readme file for update details.
 ###########################################################################################################################################
 
 $DownloadDirectory = $PSScriptRoot
@@ -95,7 +95,6 @@ function Parse-TVShowFileName
 	# Regular expressions for different naming conventions
 	$patterns = @(
 		"^(?<showName>.+?)[.|\s|-]+[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})", # Show.Name.S01E01
-        "^(?<showName>.+?)[_|\s|-]+[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})", # Show_Name_S01E01
 		"^(?<showName>.+?)[.|\s|-]+(?<season>\d{1,2})[xX](?<episode>\d{1,2})", # Show-Name-1x01
 		"^(?<showName>.+?)[.|\s|-]+\s?[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})" # Show Name - S01E01
 	)
@@ -104,7 +103,7 @@ function Parse-TVShowFileName
 	{
 		if ($fileName -match $pattern)
 		{
-			$showName = $matches['showName'] -replace '[.\s|_]', ' ' -replace '[.\s|-]', ' ' -replace '\s+', ' ' -replace '\s$', ''
+			$showName = $matches['showName'] -replace '[.\s|-]', ' ' -replace '\s+', ' ' -replace '\s$', ''
 			$season = "{0:D2}" -f [int]$matches['season']
 			$episode = "{0:D2}" -f [int]$matches['episode']
 			$season = $season -replace '^0+', ''
