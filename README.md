@@ -22,7 +22,7 @@ Unlike standard renamers, this tool uses a **"Strict Anchored Match"** system ag
 
 The application relies on a configuration file named `TVShowMover.ini` located in the same directory as the executable (or the target download directory).
 
-### INI File Format
+### 🛠️ INI File Structure
 
 The INI file acts as an **Allowlist**. If a show is not in this file, the tool will ignore it.
 
@@ -58,43 +58,27 @@ The INI file acts as an **Allowlist**. If a show is not in this file, the tool w
 
 ---
 
-🛠️ INI File Structure
-
-[Shows]
-# Standard Mapping
-The Office = D:\Media\TV Shows\The Office (2005)
-
-# Handle Apostrophes explicitly if filenames contain them
-The New Archie's = T:\KidsTV\The New Archies
-
-# Files starting with "Sabrina" go here
-Sabrina = T:\KidsTV\Sabrina The Teenage Witch (1971)
-
-# Files starting with the full title ALSO go here (Multiple keys, same path)
-Sabrina The Teenage Witch = T:\KidsTV\Sabrina The Teenage Witch (1971)
-
----
-
 ## ⚡ Usage
 
 1️⃣ Default Scan using current folder and default ini file (TVShowMover.ini):
 ```command
-.\TVShowMover.exe"
+TVShowMover.exe
 ```
 
 1️⃣ Scan a specific downloads folder:
 ```command
-.\TVShowMover.exe -DownloadDirectory "D:\Downloads\Incoming"
+TVShowMover.exe -DownloadDirectory "D:\Downloads\Incoming"
 ```
 
 Use a specific config file:
 ```command
-.\TVShowMover.exe -IniFileName "MyConfig.ini"
+TVShowMover.exe -IniFileName "MyConfig.ini"
 ```
 
 Combine arguments:
 ```command
-.\TVShowMover.exe -DownloadDirectory "E:\Torrents" -IniFileName "KidsTV.ini"
+TVShowMover.exe -DownloadDirectory "E:\Torrents" -IniFileName "KidsTV.ini"
+```
 
 ---
 
