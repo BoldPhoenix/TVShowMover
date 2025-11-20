@@ -10,6 +10,14 @@ Step 3. Configure your downloading tool to run tvshowmover.exe after download.
 
 UPDATES:
 ---------------------------------------
+
+Version 3.5.0.3 - 11/20/2025
+- Fixed crash when destination filenames contain special characters (brackets `[]` or parentheses `()`) by using `-LiteralPath` for all file existence checks.
+
+Version 3.5.0.2 - 11/20/2025
+- Fixed critical bug with square brackets `[]` in source filenames preventing moves.
+- Added Smart Season detection: Defaults to existing "Season 1" folders to prevent creating "Season 01" duplicates.
+
 Version 3.5.0.0 - 11/19/2025
 - Added Strict Anchoring: Prevents false positives (e.g. "Riverdale" matching inside other filenames).
 - Added Auto-Enrichment: Fetches episode titles for standard "SxxExx" files.
