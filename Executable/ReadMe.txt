@@ -3,13 +3,20 @@ TV Show Mover
 DESCRIPTION:
 ---------------------------------------
 
-TV Show Mover is an application designed to automatically find,sort, and move tv shows to their correct locations after downloading.
+TV Show Mover is an application designed to automatically find, sort, and move tv shows to their correct locations after downloading.
 Step 1. Update the included tvshowmover.ini file to match your tv shows and locations.
 Step 2. Place the exe and ini file in your specified download directory.
 Step 3. Configure your downloading tool to run tvshowmover.exe after download.
 
 UPDATES:
 ---------------------------------------
+Version 3.5.0.0 - 11/19/2025
+- Added Strict Anchoring: Prevents false positives (e.g. "Riverdale" matching inside other filenames).
+- Added Auto-Enrichment: Fetches episode titles for standard "SxxExx" files.
+- Added Deep Matching: Handles complex filenames lacking standard S/E numbering.
+- Added Dot Separators: Renames files using the "Show.SxxExx.Title.ext" format.
+- Added TVMaze lookup function to automatically "normalize" file names, and verify season and episode.
+
 Version 3.0.0.5 - 02/28/2025
 - Fixed bug with moving show packs with multiple seasons.
 - Added srt files to move function.
