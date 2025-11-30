@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    TV Show Mover - Auto-Enrichment & Deep Matching Edition
+    TV Show Mover - Auto-Enrichment & Deep Matching Edition (Fixed for #x## format)
 
 .DESCRIPTION
     Scans a download directory for TV show video files, matches them against a user-defined INI file, 
@@ -12,11 +12,13 @@
     - Auto-Enrichment: Fetches episode titles for standard "SxxExx" files.
     - Deep Matching: Handles complex filenames lacking standard S/E numbering.
     - Dot Separators: Renames files using the "Show.SxxExx.Title.ext" format.
+    - FIXED: Now supports #x## format (e.g., "4x05" in addition to "S04E05")
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.0
-    Updated: 2025-11-19
+    Version: 3.5.0.4
+    Updated: 2025-11-29
+    Fixed by: BoldPhoenix - Added support for #x## episode numbering format
 #>
 
 [CmdletBinding()]
@@ -100,6 +102,7 @@ function Get-IniContent
 function Get-StrictRegex
 {
     param ([string]$ShowName)
+    
     $Safe = [regex]::Escape($ShowName) -replace "\\ ", "[._\-\s']+"
     return "(?i)^$Safe([._\-\s]|$)"
 }
@@ -165,14 +168,8 @@ function Get-DeepMatch
         $Uri = "http://api.tvmaze.com/search/shows?q=" + [uri]::EscapeDataString($SearchTerm)
         $Shows = Invoke-RestMethod -Uri $Uri -Method Get -ErrorAction Stop
         
-        # Logic to split Double Titles (e.g. "Title1.-.Title2")
-        $Title1 = $RawTitleString; $Title2 = $null
-        if ($RawTitleString -match "^(?<t1>.+?)\.-\.(?<t2>.+)$")
-        {
-            $Title1 = $matches['t1']; $Title2 = $matches['t2']
-        }
-        # Normalize titles for comparison
-        $Title1 = $Title1 -replace '[._]', ' '; if ($Title2) { $Title2 = $Title2 -replace '[._]', ' ' }
+        # Extract the first title candidate from filename (e.g., "Title1" from "Title1.-.Title2")
+        $Title1 = ($RawTitleString -split '[\.\-]')[0].Trim()
         
         foreach ($Item in $Shows)
         {
@@ -192,25 +189,33 @@ function Get-DeepMatch
                         if ((Test-FuzzyMatch -A $Title1 -B $Cand.name) -or ($Title1.Length -lt 3))
                         {
                             $Result = @{ ShowName = $Show.name; Season = $Cand.season; EpStart = $Cand.number; EpEnd = $Cand.number; FullTitle = $Cand.name }
-                            
-                            # Check for Multi-Episode (Title 2)
-                            if ($Title2)
-                            {
-                                $NextEp = $Eps | Where-Object { $_.number -eq ($Cand.number + 1) } | Select-Object -First 1
-                                if ($NextEp -and (Test-FuzzyMatch -A $Title2 -B $NextEp.name))
-                                {
-                                    $Result.EpEnd = $NextEp.number; $Result.FullTitle = "$($Cand.name) - $($NextEp.name)"
-                                }
-                            }
                             return $Result
                         }
-                        else
+                    }
+                }
+                
+                # Fallback: Try matching against ALL episodes if we have a title string
+                foreach ($Ep in $Eps)
+                {
+                    if (Test-FuzzyMatch -A $Title1 -B $Ep.name)
+                    {
+                        # Check if this could be a multi-episode file (e.g., Title1.-.Title2)
+                        $NextEp = $Eps | Where-Object { $_.season -eq $Ep.season -and $_.number -eq ($Ep.number + 1) } | Select-Object -First 1
+                        $EpEnd = $Ep.number
+                        $FullTitle = $Ep.name
+                        
+                        if ($NextEp -and $RawTitleString -match "\.[-\.]\..*$")
                         {
-                            # Fallback: Title didn't match, but the Episode Number was exact. 
-                            # We trust the numbering over the naming in this edge case.
-                            Write-Log "      ! Warning: Title mismatch but Ep# matched. Trusting Ep#."
-                            return @{ ShowName = $Show.name; Season = $Cand.season; EpStart = $Cand.number; EpEnd = $Cand.number; FullTitle = $Cand.name }
+                            $Title2 = ($RawTitleString -split '\.[-\.]\.')[1] -replace '\.[^.]+$', ''
+                            if (Test-FuzzyMatch -A $Title2 -B $NextEp.name)
+                            {
+                                $EpEnd = $NextEp.number
+                                $FullTitle = "$($Ep.name) & $($NextEp.name)"
+                            }
                         }
+                        
+                        $Result = @{ ShowName = $Show.name; Season = $Ep.season; EpStart = $Ep.number; EpEnd = $EpEnd; FullTitle = $FullTitle }
+                        return $Result
                     }
                 }
             }
@@ -255,13 +260,14 @@ foreach ($File in $Files)
         
         # --- STEP 2: PARSING & ENRICHMENT ---
         
-        # SCENARIO A: Standard SxxExx Format
-        if ($File.Name -match "[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})")
+        # SCENARIO A: Standard SxxExx or #x## Format
+        # Updated to handle both "S04E05" and "4x05" formats
+        if ($File.Name -match "(?:[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})|(?<season>\d{1,2})[xX](?<episode>\d{1,2}))")
         {
             $Season = [int]$matches['season']; $Episode = [int]$matches['episode']
             $S = "{0:D2}" -f $Season; $E = "{0:D2}" -f $Episode
             
-            Write-Log "MATCH (Standard): '$($File.Name)' -> Checking API..."
+            Write-Log "MATCH (Standard): '$($File.Name)' -> S${S}E${E}"
             
             # Attempt to get official title from API
             $EpTitle = Get-TitleFromSE -SearchTerm $MatchedKey -Season $Season -Episode $Episode
@@ -284,6 +290,7 @@ foreach ($File in $Files)
                 $NewName = "$MatchedKey.S${S}E${E}$($File.Extension)"
                 Write-Log "  > No Title found. Using basic rename."
             }
+            
             $Processed = $true
         }
         # SCENARIO B: Deep Match (Complex/Multi-Episode Files)
@@ -342,17 +349,24 @@ foreach ($File in $Files)
                         Write-Log "  MOVED: $NewName"
                         
                         # Cleanup: Delete source folder if it is now empty (and not the root download dir)
-                        if ($File.DirectoryName -ne $DownloadDirectory -and -not (Get-ChildItem $File.DirectoryName))
+                        $SourceDir = Split-Path -Path $File.FullName -Parent
+                        if ($SourceDir -ne $DownloadDirectory)
                         {
-                            Remove-Item $File.DirectoryName -Force; Write-Log "  CLEANUP: Deleted folder"
+                            $RemainingFiles = Get-ChildItem -Path $SourceDir -File -Recurse
+                            if (-not $RemainingFiles)
+                            {
+                                Remove-Item -Path $SourceDir -Recurse -Force -ErrorAction SilentlyContinue
+                                Write-Log "  CLEANUP: Deleted empty folder '$SourceDir'"
+                            }
                         }
                     }
-                    catch { Write-Log "  ERROR: $($_.Exception.Message)" }
+                    catch { Write-Log "  ERROR: Failed to move file. $($_.Exception.Message)" }
                 }
-                else { Write-Log "  SKIP: File exists" }
+                else { Write-Log "  SKIPPED: File already exists at destination." }
             }
         }
     }
+    else { Write-Log "IGNORED: '$($File.Name)' (No matching show in INI)" }
 }
 
-Write-Log "Scan Complete"
+Write-Log "Scan Complete."
