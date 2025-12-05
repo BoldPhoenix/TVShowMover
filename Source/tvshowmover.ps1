@@ -17,12 +17,19 @@
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.8
+    Version: 3.5.0.9
     Updated: 2025-12-05
     Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
 
     COMPLETE VERSION HISTORY:
     ========================
+    v3.5.0.9 (2025-12-05) - Optional Apostrophe Matching
+      * Enhanced: Get-StrictRegex now makes apostrophes optional in pattern matching
+      * Allows: Filenames without apostrophes to match INI entries with apostrophes
+      * Example: "Hells.Kitchen.US" matches "Hells Kitchen US" or "Hell's Kitchen US"
+      * Pattern: Escaped apostrophes (\') replaced with optional pattern ('?)
+      * Improves: Flexibility for shows with punctuation variations
+
     v3.5.0.8 (2025-12-05) - Ignore Year in Filename Matching
       * Enhanced: Get-StrictRegex now optionally skips year patterns in filenames
       * Allows: "Law.and.Order.SVU.2025.S26E20.mkv" to match "Law and Order SVU" in INI
@@ -176,11 +183,12 @@ function Get-IniContent
 #           2. Replaces spaces with flexible separators (dots, underscores, hyphens).
 #           3. ANCHORS the match to the start of the string (^) to prevent partial matches.
 #           4. Optionally allows a year pattern (e.g., .2025.) between show name and episode.
+#           5. Makes apostrophes optional to handle variations like "Hells Kitchen" vs "Hell's Kitchen".
 function Get-StrictRegex
 {
     param ([string]$ShowName)
 
-    $Safe = [regex]::Escape($ShowName) -replace "\ ", "[._\-\s']+"
+    $Safe = [regex]::Escape($ShowName) -replace "\ ", "[._\-\s']+" -replace "\\'", "'?"
     # Allow optional year pattern like .2025. or .1999. between show name and episode
     return "(?i)^$Safe(?:[._\-\s]+\d{4})?[._\-\s]"
 }
