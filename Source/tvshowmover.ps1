@@ -3,8 +3,8 @@
     TV Show Mover - Auto-Enrichment & Deep Matching Edition (Fixed for #x## format)
 
 .DESCRIPTION
-    Scans a download directory for TV show video files, matches them against a user-defined INI file, 
-    fetches episode metadata from the TVMaze API (Titles, Multi-Episode ranges), and moves them 
+    Scans a download directory for TV show video files, matches them against a user-defined INI file,
+    fetches episode metadata from the TVMaze API (Titles, Multi-Episode ranges), and moves them
     to organized folders.
 
     Features:
@@ -47,14 +47,14 @@ if ([string]::IsNullOrWhiteSpace($DownloadDirectory))
 $IniPath = Join-Path -Path $DownloadDirectory -ChildPath $IniFileName
 $LogFile = Join-Path -Path $DownloadDirectory -ChildPath ("TVShowMover-" + (Get-Date).ToString("yyyy-MM-dd") + ".log")
 
-# FUNCTION: Write-Log
+# FUNCTION: Write-TVShowLog
 # Purpose:  Writes a timestamped message to the log file and outputs to the console.
-function Write-Log
+function Write-TVShowLog
 {
     Param ([string]$Message)
     $Line = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $Message"
     Add-Content -Path $LogFile -Value $Line -ErrorAction SilentlyContinue
-    Write-Host $Line
+    Write-Output $Line
 }
 
 # Initialize Log File if it doesn't exist
@@ -73,7 +73,7 @@ function Get-IniContent
 {
     param ([string]$iniFile)
     $iniContent = [System.Collections.Generic.Dictionary[string, string]]::new([System.StringComparer]::OrdinalIgnoreCase)
-    
+
     if (Test-Path $iniFile)
     {
         foreach ($line in Get-Content -Path $iniFile)
@@ -82,7 +82,7 @@ function Get-IniContent
             if ($line -match "^(.*?)\s*=\s*(.*)$")
             {
                 $k = $matches[1].Trim(); $v = $matches[2].Trim()
-                
+
                 # Ignore comments (#) or Section Headers ([Shows])
                 if ($k -notmatch "^[\[#]" -and -not [string]::IsNullOrWhiteSpace($k))
                 {
@@ -102,7 +102,7 @@ function Get-IniContent
 function Get-StrictRegex
 {
     param ([string]$ShowName)
-    
+
     $Safe = [regex]::Escape($ShowName) -replace "\\ ", "[._\-\s']+"
     return "(?i)^$Safe([._\-\s]|$)"
 }
@@ -113,13 +113,13 @@ function Get-StrictRegex
 function Test-FuzzyMatch
 {
     param ([string]$A, [string]$B)
-    
+
     # Remove non-alphanumeric characters and split into word arrays
-    $WA = ($A -replace '[^a-zA-Z0-9]', ' ').ToLower() -split '\s+' | Where { $_.Length -gt 1 }
-    $WB = ($B -replace '[^a-zA-Z0-9]', ' ').ToLower() -split '\s+' | Where { $_.Length -gt 1 }
-    
+    $WA = ($A -replace '[^a-zA-Z0-9]', ' ').ToLower() -split '\s+' | Where-Object { $_.Length -gt 1 }
+    $WB = ($B -replace '[^a-zA-Z0-9]', ' ').ToLower() -split '\s+' | Where-Object { $_.Length -gt 1 }
+
     if ($WA.Count -eq 0 -or $WB.Count -eq 0) { return $false }
-    
+
     # Check if any word in A exists in B
     foreach ($w in $WA) { if ($WB -contains $w) { return $true } }
     return $false
@@ -131,13 +131,13 @@ function Test-FuzzyMatch
 function Get-TitleFromSE
 {
     param ($SearchTerm, $Season, $Episode)
-    
-    Write-Log "    ...Enriching: Querying TVMaze for '$SearchTerm' (S${Season}E${Episode})..."
+
+    Write-TVShowLog "    ...Enriching: Querying TVMaze for '$SearchTerm' (S${Season}E${Episode})..."
     try
     {
         $Uri = "http://api.tvmaze.com/search/shows?q=" + [uri]::EscapeDataString($SearchTerm)
         $Shows = Invoke-RestMethod -Uri $Uri -Method Get -ErrorAction Stop
-        
+
         foreach ($Item in $Shows)
         {
             $Show = $Item.show
@@ -151,7 +151,7 @@ function Get-TitleFromSE
             }
         }
     }
-    catch { Write-Log "    API Error: $($_.Exception.Message)" }
+    catch { Write-TVShowLog "    API Error: $($_.Exception.Message)" }
     return $null
 }
 
@@ -161,21 +161,21 @@ function Get-TitleFromSE
 function Get-DeepMatch
 {
     param ([string]$SearchTerm, [int]$EpHint, [string]$RawTitleString)
-    
-    Write-Log "    ...Deep Match: Querying TVMaze for '$SearchTerm'..."
+
+    Write-TVShowLog "    ...Deep Match: Querying TVMaze for '$SearchTerm'..."
     try
     {
         $Uri = "http://api.tvmaze.com/search/shows?q=" + [uri]::EscapeDataString($SearchTerm)
         $Shows = Invoke-RestMethod -Uri $Uri -Method Get -ErrorAction Stop
-        
+
         # Extract the first title candidate from filename (e.g., "Title1" from "Title1.-.Title2")
         $Title1 = ($RawTitleString -split '[\.\-]')[0].Trim()
-        
+
         foreach ($Item in $Shows)
         {
             $Show = $Item.show
             $Eps = Invoke-RestMethod -Uri "http://api.tvmaze.com/shows/$($Show.id)/episodes" -Method Get -ErrorAction SilentlyContinue
-            
+
             if ($Eps)
             {
                 # Try to find a candidate using the Episode Number Hint found in the filename (E##)
@@ -184,7 +184,7 @@ function Get-DeepMatch
                     $Cand = $Eps | Where-Object { $_.number -eq $EpHint } | Select-Object -First 1
                     if ($Cand)
                     {
-                        # VERIFICATION: Does the title vaguely match? 
+                        # VERIFICATION: Does the title vaguely match?
                         # If yes, OR if title is too short to verify, we accept the match.
                         if ((Test-FuzzyMatch -A $Title1 -B $Cand.name) -or ($Title1.Length -lt 3))
                         {
@@ -193,7 +193,7 @@ function Get-DeepMatch
                         }
                     }
                 }
-                
+
                 # Fallback: Try matching against ALL episodes if we have a title string
                 foreach ($Ep in $Eps)
                 {
@@ -203,7 +203,7 @@ function Get-DeepMatch
                         $NextEp = $Eps | Where-Object { $_.season -eq $Ep.season -and $_.number -eq ($Ep.number + 1) } | Select-Object -First 1
                         $EpEnd = $Ep.number
                         $FullTitle = $Ep.name
-                        
+
                         if ($NextEp -and $RawTitleString -match "\.[-\.]\..*$")
                         {
                             $Title2 = ($RawTitleString -split '\.[-\.]\.')[1] -replace '\.[^.]+$', ''
@@ -213,7 +213,7 @@ function Get-DeepMatch
                                 $FullTitle = "$($Ep.name) & $($NextEp.name)"
                             }
                         }
-                        
+
                         $Result = @{ ShowName = $Show.name; Season = $Ep.season; EpStart = $Ep.number; EpEnd = $EpEnd; FullTitle = $FullTitle }
                         return $Result
                     }
@@ -221,7 +221,7 @@ function Get-DeepMatch
             }
         }
     }
-    catch { Write-Log "    API Error: $($_.Exception.Message)" }
+    catch { Write-TVShowLog "    API Error: $($_.Exception.Message)" }
     return $null
 }
 
@@ -230,11 +230,11 @@ function Get-DeepMatch
 # 3. MAIN EXECUTION LOOP
 # =================================================================================================
 
-Write-Log "Starting Scan in $DownloadDirectory"
+Write-TVShowLog "Starting Scan in $DownloadDirectory"
 
 # Load INI Configuration
 $ShowPaths = Get-IniContent $IniPath
-if (-not $ShowPaths) { Write-Log "CRITICAL: No INI entries found."; exit }
+if (-not $ShowPaths) { Write-TVShowLog "CRITICAL: No INI entries found."; exit }
 
 # Sort Keys by length (Descending) to ensure "NCIS New Orleans" matches before "NCIS"
 $SortedKeys = $ShowPaths.Keys | Sort-Object { $_.Length } -Descending
@@ -245,30 +245,30 @@ $Files = @(Get-ChildItem -Path $DownloadDirectory -Recurse -File -Include "*.mp4
 foreach ($File in $Files)
 {
     $MatchedKey = $null
-    
+
     # --- STEP 1: MATCHING ---
     # Check if the filename starts with a known Show Name from the INI
     foreach ($Key in $SortedKeys)
     {
         if ($File.Name -match (Get-StrictRegex -ShowName $Key)) { $MatchedKey = $Key; break }
     }
-    
+
     if ($MatchedKey)
     {
         $Dest = $ShowPaths[$MatchedKey]
         $Processed = $false; $NewName = $null
-        
+
         # --- STEP 2: PARSING & ENRICHMENT ---
-        
+
         # SCENARIO A: Standard SxxExx or #x## Format
         # Updated to handle both "S04E05" and "4x05" formats
         if ($File.Name -match "(?:[Ss](?<season>\d{1,2})[Ee](?<episode>\d{1,2})|(?<season>\d{1,2})[xX](?<episode>\d{1,2}))")
         {
             $Season = [int]$matches['season']; $Episode = [int]$matches['episode']
             $S = "{0:D2}" -f $Season; $E = "{0:D2}" -f $Episode
-            
-            Write-Log "MATCH (Standard): '$($File.Name)' -> S${S}E${E}"
-            
+
+            Write-TVShowLog "MATCH (Standard): '$($File.Name)' -> S${S}E${E}"
+
             # Attempt to get official title from API
             $EpTitle = Get-TitleFromSE -SearchTerm $MatchedKey -Season $Season -Episode $Episode
             if (-not $EpTitle)
@@ -277,20 +277,20 @@ foreach ($File in $Files)
                 $Folder = Split-Path -Path $Dest -Leaf
                 if ($Folder -ne $MatchedKey) { $EpTitle = Get-TitleFromSE -SearchTerm $Folder -Season $Season -Episode $Episode }
             }
-            
+
             if ($EpTitle)
             {
                 # Format: Show.S01E01.Title.ext
                 $NewName = "$MatchedKey.S${S}E${E}.$EpTitle$($File.Extension)"
-                Write-Log "  > Found Title: '$EpTitle'"
+                Write-TVShowLog "  > Found Title: '$EpTitle'"
             }
             else
             {
                 # Format: Show.S01E01.ext (Basic Rename)
                 $NewName = "$MatchedKey.S${S}E${E}$($File.Extension)"
-                Write-Log "  > No Title found. Using basic rename."
+                Write-TVShowLog "  > No Title found. Using basic rename."
             }
-            
+
             $Processed = $true
         }
         # SCENARIO B: Deep Match (Complex/Multi-Episode Files)
@@ -298,8 +298,8 @@ foreach ($File in $Files)
         elseif ($File.Name -match "\.-\.E(?<ep>\d+)\.(?<rest>.+)\.(?<ext>mp4|mkv|avi)$")
         {
             $Ep = [int]$matches['ep']
-            Write-Log "  Deep Match: '$($File.Name)' (Hint: Ep $Ep)"
-            
+            Write-TVShowLog "  Deep Match: '$($File.Name)' (Hint: Ep $Ep)"
+
             # Attempt Deep Match via API
             $ApiData = Get-DeepMatch -SearchTerm $MatchedKey -EpHint $Ep -RawTitleString $matches['rest']
             if (-not $ApiData)
@@ -307,31 +307,31 @@ foreach ($File in $Files)
                 $Folder = Split-Path -Path $Dest -Leaf
                 if ($Folder -ne $MatchedKey) { $ApiData = Get-DeepMatch -SearchTerm $Folder -EpHint $Ep -RawTitleString $matches['rest'] }
             }
-            
+
             if ($ApiData)
             {
                 # Format Resulting String
                 $S = "{0:D2}" -f $ApiData.Season; $E1 = "{0:D2}" -f $ApiData.EpStart
                 $EpStr = "S${S}E${E1}"
-                
+
                 # Append multi-episode indicator if applicable (e.g. S01E01-E02)
                 if ($ApiData.EpEnd -ne $ApiData.EpStart) { $EpStr += "-E$("{0:D2}" -f $ApiData.EpEnd)" }
-                
+
                 $NewName = "$MatchedKey.$EpStr.$($ApiData.FullTitle)$($File.Extension)"
                 $Processed = $true
-                Write-Log "  API SUCCESS: -> '$NewName'"
+                Write-TVShowLog "  API SUCCESS: -> '$NewName'"
             }
-            else { Write-Log "  API FAIL: No match for '$MatchedKey'" }
+            else { Write-TVShowLog "  API FAIL: No match for '$MatchedKey'" }
         }
-        else { Write-Log "IGNORED: '$($File.Name)' (Format unrecognized)" }
-        
+        else { Write-TVShowLog "IGNORED: '$($File.Name)' (Format unrecognized)" }
+
         # --- STEP 3: FILE OPERATION (MOVE) ---
-        
+
         if ($Processed -and $NewName)
         {
             # Sanitize Filename (Remove illegal Windows chars)
             $NewName = $NewName -replace '[<>:"/\\|?*]', ''
-            
+
             if ($NewName -match "S(?<season>\d{2})")
             {
                 # Ensure Destination Folder Exists
@@ -339,9 +339,9 @@ foreach ($File in $Files)
                 $SeasonNum = [int]$matches['season']
                 $SeasDir = Join-Path $Dest ("Season " + $SeasonNum)
                 if (-not (Test-Path $SeasDir)) { New-Item -Path $SeasDir -ItemType Directory -Force | Out-Null }
-                
+
                 $DestFile = Join-Path $SeasDir $NewName
-                
+
                 # Check for existing file with same episode (regardless of filename)
                 $ExistingEpisode = $null
                 if (Test-Path $SeasDir)
@@ -354,15 +354,15 @@ foreach ($File in $Files)
                         $ExistingEpisode = Get-ChildItem -Path $SeasDir -File | Where-Object { $_.Name -match "S\d{2}E${EpNum}" } | Select-Object -First 1
                     }
                 }
-                
+
                 if ($ExistingEpisode)
                 {
                     # Episode already exists - delete the new file and log it
                     try
                     {
                         Remove-Item -Path $File.FullName -Force -ErrorAction Stop
-                        Write-Log "  DUPLICATE REMOVED: Episode $EpNum already exists as '$($ExistingEpisode.Name)'"
-                        
+                        Write-TVShowLog "  DUPLICATE REMOVED: Episode $EpNum already exists as '$($ExistingEpisode.Name)'"
+
                         # Cleanup: Delete source folder if it is now empty (and not the root download dir)
                         $SourceDir = Split-Path -Path $File.FullName -Parent
                         if ($SourceDir -ne $DownloadDirectory)
@@ -371,11 +371,11 @@ foreach ($File in $Files)
                             if (-not $RemainingFiles)
                             {
                                 Remove-Item -Path $SourceDir -Recurse -Force -ErrorAction SilentlyContinue
-                                Write-Log "  CLEANUP: Deleted empty folder '$SourceDir'"
+                                Write-TVShowLog "  CLEANUP: Deleted empty folder '$SourceDir'"
                             }
                         }
                     }
-                    catch { Write-Log "  ERROR removing duplicate: $($_.Exception.Message)" }
+                    catch { Write-TVShowLog "  ERROR removing duplicate: $($_.Exception.Message)" }
                 }
                 elseif (-not (Test-Path $DestFile))
                 {
@@ -383,8 +383,8 @@ foreach ($File in $Files)
                     try
                     {
                         Move-Item -Path $File.FullName -Destination $DestFile -Force -ErrorAction Stop
-                        Write-Log "  MOVED: $NewName"
-                        
+                        Write-TVShowLog "  MOVED: $NewName"
+
                         # Cleanup: Delete source folder if it is now empty (and not the root download dir)
                         $SourceDir = Split-Path -Path $File.FullName -Parent
                         if ($SourceDir -ne $DownloadDirectory)
@@ -393,17 +393,17 @@ foreach ($File in $Files)
                             if (-not $RemainingFiles)
                             {
                                 Remove-Item -Path $SourceDir -Recurse -Force -ErrorAction SilentlyContinue
-                                Write-Log "  CLEANUP: Deleted empty folder '$SourceDir'"
+                                Write-TVShowLog "  CLEANUP: Deleted empty folder '$SourceDir'"
                             }
                         }
                     }
-                    catch { Write-Log "  ERROR: Failed to move file. $($_.Exception.Message)" }
+                    catch { Write-TVShowLog "  ERROR: Failed to move file. $($_.Exception.Message)" }
                 }
-                else { Write-Log "  SKIPPED: File already exists at destination." }
+                else { Write-TVShowLog "  SKIPPED: File already exists at destination." }
             }
         }
     }
-    else { Write-Log "IGNORED: '$($File.Name)' (No matching show in INI)" }
+    else { Write-TVShowLog "IGNORED: '$($File.Name)' (No matching show in INI)" }
 }
 
-Write-Log "Scan Complete."
+Write-TVShowLog "Scan Complete."
