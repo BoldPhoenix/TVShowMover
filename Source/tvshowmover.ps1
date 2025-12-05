@@ -17,12 +17,18 @@
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.7
+    Version: 3.5.0.8
     Updated: 2025-12-05
     Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
 
     COMPLETE VERSION HISTORY:
     ========================
+    v3.5.0.8 (2025-12-05) - Ignore Year in Filename Matching
+      * Enhanced: Get-StrictRegex now optionally skips year patterns in filenames
+      * Allows: "Law.and.Order.SVU.2025.S26E20.mkv" to match "Law and Order SVU" in INI
+      * Pattern: Supports year formats like .2025., .1999., etc between show name and episode
+      * Improves: Matching accuracy for remade shows with years in filenames
+
     v3.5.0.7 (2025-12-05) - Fix Regex Matching for Multi-Word Shows
       * Fixed: Corrected Get-StrictRegex to properly escape spaces
       * Fixed: Changed from "\\ " to "\ " for proper regex replacement
@@ -169,12 +175,14 @@ function Get-IniContent
 #           1. Escapes special characters in the show name.
 #           2. Replaces spaces with flexible separators (dots, underscores, hyphens).
 #           3. ANCHORS the match to the start of the string (^) to prevent partial matches.
+#           4. Optionally allows a year pattern (e.g., .2025.) between show name and episode.
 function Get-StrictRegex
 {
     param ([string]$ShowName)
 
     $Safe = [regex]::Escape($ShowName) -replace "\ ", "[._\-\s']+"
-    return "(?i)^$Safe[._\-\s]"
+    # Allow optional year pattern like .2025. or .1999. between show name and episode
+    return "(?i)^$Safe(?:[._\-\s]+\d{4})?[._\-\s]"
 }
 
 # FUNCTION: Test-FuzzyMatch
