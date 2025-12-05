@@ -1,3 +1,26 @@
 *.psbuild
 *.TempPoint.ps1
 bin/*
+
+# Development and testing files (not included in production repo)
+Tests/
+TESTING.md
+QUALITY_REPORT.md
+PSScriptAnalyzerSettings.psd1
+run-tests.ps1
+ANALYSIS_AND_FIX.md
+
+# Common PowerShell files to ignore
+*.log
+*.tmp
+*.backup
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
