@@ -16,9 +16,9 @@
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.4
-    Updated: 2025-11-29
-    Fixed by: BoldPhoenix - Added support for #x## episode numbering format
+    Version: 3.5.0.5
+    Updated: 2025-12-05
+    Fixed by: BoldPhoenix, with enhancements for duplicate episode detection
 #>
 
 [CmdletBinding()]
@@ -240,7 +240,7 @@ if (-not $ShowPaths) { Write-Log "CRITICAL: No INI entries found."; exit }
 $SortedKeys = $ShowPaths.Keys | Sort-Object { $_.Length } -Descending
 
 # Get List of Video Files
-$Files = Get-ChildItem -Path $DownloadDirectory -Recurse -Include "*.mp4", "*.mkv", "*.avi" -File
+$Files = @(Get-ChildItem -Path $DownloadDirectory -Recurse -File -Include "*.mp4", "*.mkv", "*.avi")
 
 foreach ($File in $Files)
 {
@@ -335,14 +335,51 @@ foreach ($File in $Files)
             if ($NewName -match "S(?<season>\d{2})")
             {
                 # Ensure Destination Folder Exists
-                $SeasDir = Join-Path $Dest ("Season " + $matches['season'])
+                # Remove leading zero from season number (Season 1, not Season 01)
+                $SeasonNum = [int]$matches['season']
+                $SeasDir = Join-Path $Dest ("Season " + $SeasonNum)
                 if (-not (Test-Path $SeasDir)) { New-Item -Path $SeasDir -ItemType Directory -Force | Out-Null }
                 
                 $DestFile = Join-Path $SeasDir $NewName
                 
-                # Check for Duplicate Files before moving
-                if (-not (Test-Path $DestFile))
+                # Check for existing file with same episode (regardless of filename)
+                $ExistingEpisode = $null
+                if (Test-Path $SeasDir)
                 {
+                    # Extract episode info from new filename to check for duplicates
+                    if ($NewName -match "S\d{2}E(\d{2})")
+                    {
+                        $EpNum = $matches[1]
+                        # Look for any file in this season with the same episode number
+                        $ExistingEpisode = Get-ChildItem -Path $SeasDir -File | Where-Object { $_.Name -match "S\d{2}E${EpNum}" } | Select-Object -First 1
+                    }
+                }
+                
+                if ($ExistingEpisode)
+                {
+                    # Episode already exists - delete the new file and log it
+                    try
+                    {
+                        Remove-Item -Path $File.FullName -Force -ErrorAction Stop
+                        Write-Log "  DUPLICATE REMOVED: Episode $EpNum already exists as '$($ExistingEpisode.Name)'"
+                        
+                        # Cleanup: Delete source folder if it is now empty (and not the root download dir)
+                        $SourceDir = Split-Path -Path $File.FullName -Parent
+                        if ($SourceDir -ne $DownloadDirectory)
+                        {
+                            $RemainingFiles = Get-ChildItem -Path $SourceDir -File -Recurse
+                            if (-not $RemainingFiles)
+                            {
+                                Remove-Item -Path $SourceDir -Recurse -Force -ErrorAction SilentlyContinue
+                                Write-Log "  CLEANUP: Deleted empty folder '$SourceDir'"
+                            }
+                        }
+                    }
+                    catch { Write-Log "  ERROR removing duplicate: $($_.Exception.Message)" }
+                }
+                elseif (-not (Test-Path $DestFile))
+                {
+                    # File doesn't exist - proceed with move
                     try
                     {
                         Move-Item -Path $File.FullName -Destination $DestFile -Force -ErrorAction Stop
