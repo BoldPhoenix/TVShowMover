@@ -17,12 +17,18 @@
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.6
+    Version: 3.5.0.7
     Updated: 2025-12-05
     Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
 
     COMPLETE VERSION HISTORY:
     ========================
+    v3.5.0.7 (2025-12-05) - Fix Regex Matching for Multi-Word Shows
+      * Fixed: Corrected Get-StrictRegex to properly escape spaces
+      * Fixed: Changed from "\\ " to "\ " for proper regex replacement
+      * Fixed: Simplified ending pattern from "([._\-\s]|$)" to "[._\-\s]"
+      * Now correctly matches shows like "Law and Order SVU" with filenames "Law.and.Order.SVU.S26E20.mkv"
+
     v3.5.0.6 (2025-12-05) - Code Quality & Testing
       * 100% PSScriptAnalyzer compliant (zero violations)
       * Fixed: Replaced Write-Host with Write-Output
@@ -167,8 +173,8 @@ function Get-StrictRegex
 {
     param ([string]$ShowName)
 
-    $Safe = [regex]::Escape($ShowName) -replace "\\ ", "[._\-\s']+"
-    return "(?i)^$Safe([._\-\s]|$)"
+    $Safe = [regex]::Escape($ShowName) -replace "\ ", "[._\-\s']+"
+    return "(?i)^$Safe[._\-\s]"
 }
 
 # FUNCTION: Test-FuzzyMatch
