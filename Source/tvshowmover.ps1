@@ -16,9 +16,9 @@
 
 .NOTES
     Author:  Carl Roach
-    Version: 3.5.0.5
+    Version: 3.5.0.6
     Updated: 2025-12-05
-    Fixed by: BoldPhoenix, with enhancements for duplicate episode detection
+    Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
 #>
 
 [CmdletBinding()]
