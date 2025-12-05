@@ -13,12 +13,19 @@
     - Deep Matching: Handles complex filenames lacking standard S/E numbering.
     - Dot Separators: Renames files using the "Show.SxxExx.Title.ext" format.
     - FIXED: Now supports #x## format (e.g., "4x05" in addition to "S04E05")
+    - ENHANCED: Duplicate episode detection and removal
 
 .NOTES
     Author:  Carl Roach
     Version: 3.5.0.6
     Updated: 2025-12-05
     Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
+
+    Version History:
+    - 3.5.0.6 (2025-12-05): Code quality 100% compliant, duplicate detection, PSScriptAnalyzer fixes
+    - 3.5.0.5 (2025-12-05): Enhanced duplicate episode detection
+    - 3.5.0.4 (2025-11-29): Support for #x## format (e.g., 4x05)
+    - 3.5.0.0 (2025-11-19): Initial v3.5 release with API enrichment
 #>
 
 [CmdletBinding()]
