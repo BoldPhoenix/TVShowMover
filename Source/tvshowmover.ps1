@@ -21,11 +21,68 @@
     Updated: 2025-12-05
     Fixed by: BoldPhoenix, with comprehensive test suite and quality improvements
 
-    Version History:
-    - 3.5.0.6 (2025-12-05): Code quality 100% compliant, duplicate detection, PSScriptAnalyzer fixes
-    - 3.5.0.5 (2025-12-05): Enhanced duplicate episode detection
-    - 3.5.0.4 (2025-11-29): Support for #x## format (e.g., 4x05)
-    - 3.5.0.0 (2025-11-19): Initial v3.5 release with API enrichment
+    COMPLETE VERSION HISTORY:
+    ========================
+    v3.5.0.6 (2025-12-05) - Code Quality & Testing
+      * 100% PSScriptAnalyzer compliant (zero violations)
+      * Fixed: Replaced Write-Host with Write-Output
+      * Fixed: Renamed Write-Log to Write-TVShowLog (no cmdlet overrides)
+      * Fixed: Replaced Where aliases with Where-Object
+      * Fixed: Removed all trailing whitespace
+      * Added: Comprehensive version history in code
+      * Quality: 30+ unit tests, security validation, best practices
+
+    v3.5.0.5 (2025-12-05) - Enhanced Duplicate Detection
+      * Added: Intelligent duplicate episode detection by S##E## number
+      * Changed: Duplicate episodes are now removed (not just skipped)
+      * Added: Logging of which existing file is kept when duplicate found
+      * Improved: Source folder cleanup after both moves and removals
+
+    v3.5.0.4 (2025-11-29) - Alternative Episode Format Support
+      * Added: Support for #x## format (e.g., 4x05 for Season 4 Episode 5)
+      * Improved: Flexible episode numbering pattern matching
+      * Enhanced: Better handling of non-standard filename conventions
+
+    v3.5.0.0 (2025-11-19) - Initial v3.5 Release
+      * Major rewrite for API enrichment and deep matching
+      * Added: TVMaze API integration for episode titles
+      * Added: Fuzzy matching for punctuation differences
+      * Added: Deep matching for complex filenames
+      * Added: Multi-episode support (S##E##-E##)
+      * Fixed: Strict anchored matching to prevent false positives
+      * Improved: Overall code structure and maintainability
+
+    v3.0.0.6 (2024-10-14) - v3.0 Final
+      * Stability improvements and bug fixes
+
+    v3.0.0.5, v3.0.0.4 (2024-09) - v3.0 Development
+      * Various improvements and refinements
+
+    v3.0.0.2, v3.0.0.1 (2024-09) - v3.0 Initial Release
+      * Rewrite with improved architecture
+
+    v2.0.1.1, v2.0.1.0 (2024-05) - v2.0 Final Updates
+      * Bug fixes and stability improvements
+
+    v2.0.0.9 (2021-02) - v2.0 Late Updates
+      * Additional enhancements
+
+    v2.0.0.8 (2020-10-28) - v2.0.0.8
+      * Improved file handling
+      * Better error handling
+
+    v2.0.0.7 (2020-10-22) - v2.0.0.7
+      * Enhancements to file parsing logic
+
+    v2.0.0.6 (2020-10-14) - v2.0.0.6
+      * Additional improvements to show matching
+
+    v2.0.0.5 (2020-06-10) - v2.0.0.5
+      * Major improvements over v1.0
+
+    v0.0.0.1 (2019-03-26) - Initial Creation
+      * First version of TV Show Mover
+
 #>
 
 [CmdletBinding()]
